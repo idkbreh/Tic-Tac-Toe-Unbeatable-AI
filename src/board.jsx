@@ -113,12 +113,12 @@ class Board extends Component {
     return "running";
   };
 
-  minimax = (board, depth, isComputerTurn) => {
+minimax = (board, depth, isComputerTurn) => {
     let score = this.game_over(board);
     if (score === +1) return { move: -1, score: +1 };
     if (score === -1) return { move: -1, score: -1 };
     if (score === "draw") return { move: -1, score: 0 };
-    // return { move: -1, score: isComputerTurn ? -Infinity : +Infinity };
+
     if (depth === 0)
       return { move: undefined, score: isComputerTurn ? -Infinity : +Infinity };
 
@@ -156,21 +156,19 @@ class Board extends Component {
     return { move: bestMove, score: bestScore };
   };
 
-  nextMove = async (player_move) => {
+
+nextMove = async (player_move) => {
     let board = this.state.board;
 
-    // player is trying to mark non-empty cell OR game is Over
     if (
       board[player_move] !== "" ||
       this.state.game_state !== "running" ||
       this.state.game_state === "computing"
     ) {
-      // display error message
       this.SoundPlay(notAllowed);
       return;
     }
 
-    // marking player's move
     board[player_move] = "X";
     this.setState(
       {
@@ -182,7 +180,6 @@ class Board extends Component {
 
     let game_state = this.game_over();
 
-    // player wins
     if (game_state === -1) {
       this.setState({
         game_state: "player wins"
@@ -190,7 +187,6 @@ class Board extends Component {
       return;
     }
 
-    // game goes draw
     if (game_state === "draw") {
       this.setState(
         {
@@ -203,9 +199,21 @@ class Board extends Component {
 
     await sleep(500);
 
-    let obj = this.minimax(board, 9, true);
+    // Determine whether to make a mistake
+    let makeMistake = Math.random() < 0.04;
+    let obj;
+    if (makeMistake) {
+      // If making a mistake, choose a random move
+      let emptyCells = board
+        .map((val, index) => (val === "" ? index : null))
+        .filter(val => val !== null);
+      let randomMove = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      obj = { move: randomMove, score: 0 }; // No score calculation
+    } else {
+      // Optimal move
+      obj = this.minimax(board, 9, true);
+    }
 
-    // no optimal move is found
     if (obj.move === undefined) {
       for (let i = 0; i < 9; i++) {
         if (board[i] === "") {
@@ -238,9 +246,8 @@ class Board extends Component {
         if (this.state.game_state === "draw") this.SoundPlay(draw);
       }
     );
-
-    return;
   };
+
 
   restart = () => {
     this.playFirstMove();
